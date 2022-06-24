@@ -1,0 +1,62 @@
+//+------------------------------------------------------------------+
+//|                                                      Ea Boom1000 |
+//|                                      Copyright 2020, Brian Reyes |
+//|                                                                  |
+//+------------------------------------------------------------------+
+#include <Trade/Trade.mqh>
+CTrade trade;
+ulong trade_ticket = 0;
+bool time_flag = true;
+
+MqlRates candles[];
+
+
+
+double get_lotage() { return 0.2; }
+
+//+------------------------------------------------------------------+
+//||
+//+------------------------------------------------------------------+
+bool bearish(int candle_pos, double candle_len=0)
+  {
+   return candles[candle_pos].open-candles[candle_pos].close > candle_len;
+  }
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+void OnInit()
+  {
+   ArraySetAsSeries(candles, true);
+  }
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+void OnTick()
+  {
+   CopyRates(_Symbol, _Period, 0, 3, candles);
+
+   if(bearish(0, 3000*_Point) && time_flag)
+     {
+      double bid = NormalizeDouble(SymbolInfoDouble(_Symbol, SYMBOL_BID), _Digits);
+
+      trade.Sell(get_lotage(), _Symbol, bid, 10000*_Point, 7000*_Point);
+      trade_ticket = trade.ResultOrder();
+
+      time_flag = false;
+      EventSetTimer(60);
+
+     }
+
+  }
+
+//+------------------------------------------------------------------+
+//|                                                                  |
+//+------------------------------------------------------------------+
+void OnTimer()
+  {
+   time_flag = true;
+   EventKillTimer();
+  }
+//+------------------------------------------------------------------+
